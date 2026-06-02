@@ -8,12 +8,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch:'main',
-                url: https://github.com/progamerzx/docker-pipeline.git'
-            }
-        }
 
         stage('Build') {
             steps {
