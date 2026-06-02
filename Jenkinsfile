@@ -3,56 +3,34 @@ pipeline {
 
     environment {
         IMAGE_NAME = "myapp"
-        IMAGE_TAG  = "${BUILD_NUMBER}"        // unique tag per build
         CONTAINER  = "myapp-container"
         APP_PORT   = "8080"
-        // If you prefer an env var over a docker context, uncomment:
-        // DOCKER_HOST = "ssh://ec2-user@<SERVER_B_PRIVATE_IP>"
+        VM2        = "Service@9.234.41.124"
+        REPO       = "https://github.com/Aakarsh-Sinha-Pro/docker-jenkins-pipeline.git"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm                  // pulls this repo into the workspace
-            }
-        }
-
-        stage('Verify remote Docker') {
-            steps {
-                sh 'docker version'           // confirms client + remote daemon
-                sh 'docker info | head -20'
-            }
-        }
-
-        stage('Build image') {
-            steps {
-                // build context (the workspace) is streamed over SSH to Server B
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-            }
-        }
-
-        stage('Run container') {
+        stage('Deploy on VM2') {
             steps {
                 sh '''
-                    docker rm -f ${CONTAINER} || true
-                    docker run -d --name ${CONTAINER} \
-                        -p ${APP_PORT}:8080 \
-                        ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
-            }
-        }
+                ssh ${VM2} "
+                cd /tmp &&
+                rm -rf app &&
+                git clone ${REPO} app &&
+                cd app &&
 
-        stage('Smoke test') {
-            steps {
-                sh 'sleep 3'
-                sh 'docker ps --filter name=${CONTAINER}'
+                docker rm -f ${CONTAINER} || true &&
+                docker build -t ${IMAGE_NAME} . &&
+                docker run -d -p ${APP_PORT}:80 --name ${CONTAINER} ${IMAGE_NAME}
+                "
+                '''
             }
         }
     }
 
     post {
         always {
-            sh 'docker ps'                    // runs against Server B
+            sh 'echo Deployment completed!'
         }
     }
 }
