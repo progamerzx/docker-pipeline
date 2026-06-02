@@ -2,35 +2,31 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "myapp"
-        CONTAINER  = "myapp-container"
-        APP_PORT   = "8080"
-        VM2        = "Service@9.234.41.124"
-        REPO       = "https://github.com/progamerzx/docker-pipeline.git"
+        DOCKER_HOST = "ssh://Service@9.234.41.124"
+        IMAGE = "myapp"
+        CONTAINER = "myapp-container"
     }
 
     stages {
-        stage('Deploy on VM2') {
+        stage('Checkout') {
             steps {
-                sh '''
-                ssh ${VM2} "
-                cd /tmp &&
-                rm -rf app &&
-                git clone ${REPO} app &&
-                cd app &&
-
-                docker rm -f ${CONTAINER} || true &&
-                docker build -t ${IMAGE_NAME} . &&
-                docker run -d -p ${APP_PORT}:80 --name ${CONTAINER} ${IMAGE_NAME}
-                "
-                '''
+                git 'https://github.com/progamerzx/docker-pipeline.git'
             }
         }
-    }
 
-    post {
-        always {
-            sh 'echo Deployment completed!'
+        stage('Build') {
+            steps {
+                sh 'docker build -t ${IMAGE} .'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                docker rm -f ${CONTAINER} || true
+                docker run -d -p 8080:80 --name ${CONTAINER} ${IMAGE}
+                '''
+            }
         }
     }
 }
