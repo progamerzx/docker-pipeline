@@ -6,7 +6,7 @@ pipeline {
         CONTAINER  = "myapp-container"
         APP_PORT   = "8080"
         VM2        = "Service@9.234.41.124"
-        REPO       = "https://github.com/Aakarsh-Sinha-Pro/docker-jenkins-pipeline.git"
+        REPO       = "https://github.com/progamerzx/docker-pipeline.git"
     }
 
     stages {
